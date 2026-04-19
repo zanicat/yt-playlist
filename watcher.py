@@ -4,9 +4,9 @@ import xml.etree.ElementTree as ET
 import urllib.request
 import json
 
-CHANNEL_ID   = "UC_REPLACE_WITH_CHANNEL_ID"   # placeholder
-KEYWORD      = "REPLACE_WITH_YOUR_KEYWORD"     # placeholder
-PLAYLIST_ID  = "PL_REPLACE_WITH_PLAYLIST_ID"  # placeholder
+CHANNEL_ID   = "UCkERe-GrNHU_DkHZ2PmiqgQ"   # test
+KEYWORD      = "california"     # placeholder
+PLAYLIST_ID  = "PL4mkSuVGr_mvBkA74oL-S4pobBiTV-Etx"  # test
 SEEN_FILE    = "seen_videos.txt"
 RSS_URL      = f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}"
 

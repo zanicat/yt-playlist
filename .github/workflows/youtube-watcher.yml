@@ -1,0 +1,28 @@
+name: YouTube watcher
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # every hour — adjust as needed
+  workflow_dispatch:        # lets you run it manually from GitHub UI
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run watcher
+        env:
+          YOUTUBE_API_KEY:      ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CLIENT_ID:    ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python watcher.py
+
+      - name: Commit seen_videos.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_videos.txt
+          git diff --staged --quiet || git commit -m "Update seen videos"
+          git push

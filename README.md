@@ -50,7 +50,7 @@ The channel ID looks like `UCxxxxxxxxxxxxxxxxxxxxxx`. Find it at:
 - The channel's URL if it uses the old format: `youtube.com/channel/UCxxxxxx`
 - Or via the channel's About page → Share → Copy channel ID
 
-If the channel uses a custom handle (e.g. `youtube.com/@channelname`), open the page source and search for `"channelId"` — it appears near the top.
+If the channel uses a custom handle (e.g. `youtube.com/@channelname`), open the page source and search for `"channelId"` — it appears near the top. If CTRL+F looks funky on browser like it did for me, CTRL+A and copy paste entire thing into notepad and then look for `"channelId":"UC`_______
 
 **Keyword**
 

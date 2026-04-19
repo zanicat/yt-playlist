@@ -4,7 +4,7 @@ Automatically saves videos to a YouTube playlist when a channel uploads a video 
 
 ## How it works
 
-1. GitHub Actions runs on a cron schedule (default: every hour)
+1. GitHub Actions runs once daily at noon UTC (configurable)
 2. The script fetches the channel's public RSS feed — no API key needed for this step
 3. Each new video title is checked against your keyword
 4. If it matches, the YouTube Data API adds it to your playlist
@@ -17,6 +17,8 @@ Automatically saves videos to a YouTube playlist when a channel uploads a video 
 - A GitHub account with a repository for this automation
 - A Google account that owns the target playlist
 - Python 3 (only needed locally for the one-time OAuth setup step)
+
+> **Using WSL (Windows Subsystem for Linux)?** The OAuth token setup requires a couple of extra steps since WSL can't open a browser automatically. Follow the WSL-specific instructions in step 5.
 
 ---
 
@@ -102,7 +104,16 @@ The API key alone only allows reading public data. Writing to a playlist require
 2. Choose **Desktop app** as the application type, give it any name
 3. Click **Download JSON** — this is your `client_secrets.json`
 
-**Generate the refresh token:**
+**Add yourself as a test user:**
+
+Before running the script, add your Google account as an authorised test user, otherwise Google will block the OAuth flow with an `access_denied` error.
+
+1. Go to **APIs & Services → OAuth consent screen**
+2. Scroll down to **Test users**
+3. Click **Add users** and enter the Gmail address you will authorise with
+4. Click **Save**
+
+**Copy `client_secrets.json` to your working directory:**
 
 Install the required library:
 
@@ -110,31 +121,54 @@ Install the required library:
 pip install google-auth-oauthlib
 ```
 
-Run this script (replace the path if your `client_secrets.json` is elsewhere):
+Make sure `client_secrets.json` is in the directory where you are running the commands. If you downloaded it on Windows, copy it into your working directory first or cd into downloads directory. Rename the file to client_secrets.json if needed (example below - find ur own path):
+
+```bash
+cp /mnt/c/Users/<your-windows-username>/Downloads/client_secret_*.json ~/client_secrets.json
+```
+
+If that path doesn't work (OneDrive or permissions), copy the file manually in Windows Explorer by pasting this into the Explorer address bar and dragging the file in:
+
+```
+\\wsl$\Ubuntu\home\<your-wsl-username>\
+```
+
+**Generate the refresh token:**
+
+> **WSL users:** WSL cannot open a browser automatically, so use the script below instead of the standard `run_local_server` approach. It prints a URL for you to open manually in your Windows browser.
 
 ```bash
 python -c "
 from google_auth_oauthlib.flow import InstalledAppFlow
-flow = InstalledAppFlow.from_client_secrets_file(
-    'client_secrets.json',
-    scopes=['https://www.googleapis.com/auth/youtube']
-)
-creds = flow.run_local_server(port=0)
+flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json',
+    scopes=['https://www.googleapis.com/auth/youtube'])
+flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
+auth_url, _ = flow.authorization_url(prompt='consent', access_type='offline')
+print('Open this URL in your browser:')
+print(auth_url)
+code = input('Paste the authorisation code here: ')
+flow.fetch_token(code=code)
+creds = flow.credentials
 print('CLIENT_ID:    ', creds.client_id)
 print('CLIENT_SECRET:', creds.client_secret)
 print('REFRESH_TOKEN:', creds.refresh_token)
 "
 ```
 
-A browser window will open asking you to sign in with the Google account that owns the playlist. After authorising, the three values will be printed to your terminal. Copy all three.
-
-> **Note:** Google may show a warning that the app is unverified — this is expected for personal OAuth apps. Click "Advanced" → "Go to [app name] (unsafe)" to proceed.
+1. The script prints a long URL — copy it and open it in your Windows browser
+2. Sign in with the Google account that owns the playlist
+3. If you see a warning that the app is unverified, click **Advanced** → **Go to [app name] (unsafe)** — this is expected for personal OAuth apps
+4. After authorising, Google displays a code on screen — copy it
+5. Paste the code back into the terminal when prompted
+6. The three values (`CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN`) will be printed — copy all three
 
 ---
 
 ### 6. Add GitHub Secrets
 
-In your GitHub repository, go to **Settings → Secrets and variables → Actions → New repository secret** and add all four secrets:
+In your GitHub repository, go to **Settings → Secrets and variables → Actions → Repository secrets → New repository secret** and add all four secrets:
+
+> Use **Repository secrets**, not Environment secrets. Environment secrets are for multi-environment setups and are not needed here.
 
 | Secret name | Where to get it |
 |---|---|
@@ -169,10 +203,11 @@ This is useful for testing your setup immediately after configuration.
 
 ## Adjusting the schedule
 
-The workflow runs every hour by default. To change this, edit the `cron` line in `youtube-watcher.yml`:
+The workflow runs once daily at noon UTC by default. To change this, edit the `cron` line in `youtube-watcher.yml`:
 
 ```yaml
-- cron: "0 * * * *"    # every hour (default)
+- cron: "0 12 * * *"   # once daily at noon UTC (default)
+- cron: "0 * * * *"    # every hour
 - cron: "0 */6 * * *"  # every 6 hours
 - cron: "0 9 * * *"    # once daily at 9:00 UTC
 - cron: "0 9 * * 1"    # every Monday at 9:00 UTC
